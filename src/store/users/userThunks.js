@@ -8,7 +8,7 @@ import {
 } from "firebase/auth"
 import { setError, setIsAuthenticate, setUser } from "./userSlice"
 import { auth } from "../../firebase/firebaseConfig"
-import { createUserInCollection } from "../../services/userService"
+import { createUserInCollection, getUserFromCollection, loginFromFirestore } from "../../services/userService"
 
 export const createAnAccountAsync = (newUser) => async (dispatch) => {
   try {
@@ -19,9 +19,9 @@ export const createAnAccountAsync = (newUser) => async (dispatch) => {
     )
     await updateProfile(auth.currentUser, {
       displayName: newUser.name,
-      photoURL: newUser.photoURL,
+      photoURL: newUser.photoUrl,
     })
-    const userLogged = await createUserInCollection(user.uid, { name: newUser.name, photoURL: newUser.photoURL, accessToken: user.accessToken, email: newUser.email })
+    const userLogged = await createUserInCollection(user.uid, { name: newUser.name, photoURL: newUser.photoUrl, accessToken: user.accessToken, email: newUser.email })
     // console.log(user)
     dispatch(
       setUser({
@@ -47,9 +47,10 @@ export const loginGoogle = () => {
   return async (dispatch) => {
     try {
       const userCredencial = await signInWithPopup(auth, provider)
-      console.log(userCredencial)
+      const userLogged = await loginFromFirestore(userCredencial.user)
+      console.log(userLogged)
       dispatch(setIsAuthenticate(true))
-      dispatch(setUser(userCredencial.user))
+      dispatch(setUser(userLogged))
     } catch (error) {
       dispatch(setIsAuthenticate(false))
       dispatch(
@@ -62,10 +63,17 @@ export const loginGoogle = () => {
 export const loginWithEmailAndPassword = ({ email, password }) => async ( dispatch ) => {
   try {
     const { user } = await signInWithEmailAndPassword(auth, email, password)
-    console.log(user)
-    dispatch(setIsAuthenticate(true))
-    dispatch(setUser({ email: user.email, id: user.uid, name: user.displayName, photoURL: user.photoURL, accessToken: user.accessToken }))
-    dispatch(setError(false))
+    const userLogged = await getUserFromCollection(user.uid)
+    if (userLogged) {
+      dispatch(setIsAuthenticate(true))
+      dispatch(setUser({ email: userLogged.email, id: userLogged.uid, name: userLogged.name, photoURL: userLogged.photoURL, accessToken: userLogged.accessToken }))
+      dispatch(setError(false))
+    } else {
+      dispatch(setIsAuthenticate(false))
+      dispatch(
+        setError({ error: true })
+      )
+    }
   } catch (error) {
     dispatch(setIsAuthenticate(false))
     dispatch(
@@ -91,10 +99,14 @@ export const loginWithCodeAsync = ( code ) => async ( dispatch ) => {
   const confirmationResult = window.confirmationResult
   try {
     confirmationResult.confirm(code)
-      .then(response => {
+      .then(async response => {
         const user = response.user.auth.currentUser
+        const userLogged = await loginFromFirestore(user)
+        console.log(userLogged)
+        dispatch(setIsAuthenticate(true))
+        dispatch(setUser(userLogged))
         console.log(user)
-        dispatch(setUser({ email: user.email, id: user.uid, name: user.displayName, photoURL: user.photoURL, accessToken: user.accessToken }))
+        // dispatch(setUser({ email: user.email, id: user.uid, name: user.displayName, photoURL: user.photoURL, accessToken: user.accessToken }))
         dispatch(setError(false))
       })
   } catch (error) {
@@ -103,4 +115,3 @@ export const loginWithCodeAsync = ( code ) => async ( dispatch ) => {
     )
   }
 }
-
