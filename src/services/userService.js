@@ -58,3 +58,14 @@ export const loginFromFirestore = async ( userData ) => {
     return false
   }
 }
+
+export const updateUserFromCollection = async ({id, name, photoURL}) => {
+  try {
+    const userRef = doc(firestore, collectionName, id);
+    setDoc(userRef, {name, photoURL}, { merge: true })
+    return true;
+  } catch (error) {
+    console.error(error);
+    return null
+  }
+}

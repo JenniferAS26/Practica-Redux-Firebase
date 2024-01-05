@@ -5,6 +5,7 @@ import { createData, deleteData, getData, updateData } from '../../store/product
 import { FaEdit } from "react-icons/fa"
 import { MdDelete } from "react-icons/md"
 import { logoutAsync } from '../../store/users/userThunks'
+import AntdDrawer from '../../components/antdDrawer'
 
 
 function Home() {
@@ -14,6 +15,7 @@ function Home() {
   const [price, setPrice] = useState(0)
   const dispatch = useDispatch()
   const { products } = useSelector( store => store.product )
+
 
   useEffect(() => {
     dispatch(getData())
@@ -51,6 +53,7 @@ function Home() {
   return (
     <div className='w-full flex flex-col gap-3'>
       <h1 className='text-center text-xl font-black tracking-widest text-indigo-800'>CRUD Productos</h1>
+      <AntdDrawer/>
       <button 
         className='bg-indigo-500 px-3 py-1 rounded text-white'
         type='button'

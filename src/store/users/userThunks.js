@@ -6,9 +6,9 @@ import {
   signInWithEmailAndPassword,
   signOut,
 } from "firebase/auth"
-import { setError, setIsAuthenticate, setUser } from "./userSlice"
+import { setError, setIsAuthenticate, setUser, updateUser } from "./userSlice"
 import { auth } from "../../firebase/firebaseConfig"
-import { createUserInCollection, getUserFromCollection, loginFromFirestore } from "../../services/userService"
+import { createUserInCollection, getUserFromCollection, loginFromFirestore, updateUserFromCollection } from "../../services/userService"
 
 export const createAnAccountAsync = (newUser) => async (dispatch) => {
   try {
@@ -115,3 +115,19 @@ export const loginWithCodeAsync = ( code ) => async ( dispatch ) => {
     )
   }
 }
+export const updateProfileAsync = ({name, photoURL, id})=> async(dispatch)=>{
+  try {
+    await updateProfile(auth.currentUser, {
+      displayName: name, photoURL: photoURL, 
+    });
+    await updateUserFromCollection({name, photoURL, id});
+    dispatch(updateUser({name, photoURL}))
+     
+    
+  } catch (error) {
+    console.error(error);
+    dispatch(
+      setError({ error: true, code: error.code, message: error.message })
+    )
+  }
+} 
